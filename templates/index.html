@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>CSV Upload and Dynamic Inputs</title>
+    <style>
+        .data {
+            margin-top: 20px;
+            border-collapse: collapse;
+            width: 100%;
+        }
+        .data th, .data td {
+            border: 1px solid #ddd;
+            padding: 8px;
+        }
+        .data th {
+            background-color: #f2f2f2;
+        }
+    </style>
+    <script>
+        function addInputFields() {
+            var container = document.getElementById("input-container");
+            for (var i = 0; i < 3; i++) {
+                var input = document.createElement("input");
+                input.type = "text";
+                input.name = "input_field";
+                container.appendChild(input);
+            }
+        }
+        function downloadTimetable() {
+            fetch('/download', {
+                method: 'GET',
+            })
+            .then(response => response.blob())
+            .then(blob => {
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = url;
+                a.download = 'timetable.xlsx';
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+            })
+            .catch(error => console.error('Error downloading file:', error));
+        }
+    </script>
+</head>
+<body>
+    <h1>Upload CSV and Add Inputs</h1>
+    <form method="post" enctype="multipart/form-data">
+        <label for="csv_file">Choose CSV File:</label>
+        <input type="file" id="csv_file" name="csv_file">
+        <br><br>
+
+        <div id="input-container">
+            <label>Input Fields:</label>
+        </div>
+        <button type="button" onclick="addInputFields()">Add Three More</button>
+        <br><br>
+
+        <button type="submit">Submit</button>
+    </form>
+
+    {% if csv_data %}
+        <button onclick="downloadTimetable()">Download Timetable as Excel</button>
+        <h2>Timetable</h2>
+        {% for class, schedule in csv_data.items() %}
+            <h3>{{ class }}</h3>
+            <table class="data">
+                <thead>
+                    <tr>
+                        <th>Day/Period</th>
+                        {% for i in range(1, 10) %}
+                            <th>Period {{ i }}</th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for day, day_schedule in schedule %}
+                        <tr>
+                            <td>{{ day }}</td>
+                            {% for period in day_schedule %}
+                                <td>{{ period }}</td>
+                            {% endfor %}
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% endfor %}
+    {% endif %}
+
+    {% if inputs %}
+        <h2>Entered Inputs:</h2>
+        <ul>
+            {% for i in range(0, inputs|length, 3) %}
+                <li>{{ inputs[i] }} - {{ inputs[i+1] }} - {{ inputs[i+2] }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+</body>
+</html>
